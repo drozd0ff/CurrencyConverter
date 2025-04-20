@@ -1,8 +1,6 @@
 using System.Text;
 using OpenTelemetry.Resources;
-using OpenTelemetry;
 using OpenTelemetry.Trace;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;

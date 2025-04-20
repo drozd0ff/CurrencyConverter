@@ -2,7 +2,6 @@ using CurrencyConverter.API.Middleware;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace CurrencyConverter.Tests.Middleware;
 

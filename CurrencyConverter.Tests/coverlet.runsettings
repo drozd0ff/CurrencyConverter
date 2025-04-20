@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Exclude>
+                <ModulePath>.*Tests.*</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <IncludeDirectories>
+              <IncludeDirectory>$(SolutionDir)</IncludeDirectory>
+            </IncludeDirectories>
+            <ExcludeByFile>
+              <ExcludeFile>*.cshtml</ExcludeFile>
+            </ExcludeByFile>
+            <UseSourceLink>true</UseSourceLink>
+            <FailIfCoverageLowerThan>90</FailIfCoverageLowerThan>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

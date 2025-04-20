@@ -42,21 +42,29 @@ public class MemoryCacheService : ICacheService
                 return cachedValue;
             }
 
-            // Execute the factory method
-            var result = await factory();
-
-            // Set cache options
-            var cacheOptions = new MemoryCacheEntryOptions();
-            if (expiration.HasValue)
+            try
             {
-                cacheOptions.AbsoluteExpirationRelativeToNow = expiration;
+                // Execute the factory method
+                var result = await factory();
+
+                // Set cache options
+                var cacheOptions = new MemoryCacheEntryOptions();
+                if (expiration.HasValue)
+                {
+                    cacheOptions.AbsoluteExpirationRelativeToNow = expiration;
+                }
+
+                // Store in cache
+                _memoryCache.Set(key, result, cacheOptions);
+                _logger.LogDebug("Added to cache: {Key} with expiration: {Expiration}", key, expiration);
+
+                return result;
             }
-
-            // Store in cache
-            _memoryCache.Set(key, result, cacheOptions);
-            _logger.LogDebug("Added to cache: {Key} with expiration: {Expiration}", key, expiration);
-
-            return result;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing factory method for cache key: {Key}", key);
+                throw; // Re-throw the exception after logging
+            }
         }
         finally
         {

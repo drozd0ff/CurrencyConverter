@@ -13,6 +13,44 @@ A robust, scalable, and maintainable currency conversion API built using C# and 
 - **Comprehensive Logging**: Client IP, request details, response time tracking
 - **OpenTelemetry**: Distributed tracing for monitoring and debugging
 
+## Code Coverage
+
+![Code Coverage Report](CoverageReport.png "Coverage report")
+
+Our codebase maintains a solid overall coverage rate of **79.4%** for line coverage and **84%** for branch coverage. Here's a breakdown of our coverage metrics:
+
+1. **Component Coverage**:
+   - **CurrencyConverter.Core**: 100% line and branch coverage
+   - **CurrencyConverter.Infrastructure**: 95.1% line coverage, 91.6% branch coverage
+   - **CurrencyConverter.API**: 59.2% line coverage, 72.6% branch coverage
+
+2. **High-Value Components**:
+   - **Controllers**: 100% line coverage across all endpoints
+   - **API Middleware components**: 94-100% line coverage
+   - **CurrencyValidationService**: 100% line and branch coverage
+   - **JwtTokenService**: 100% line coverage, 91.6% branch coverage
+   - **MemoryCacheService**: 100% line and branch coverage
+
+3. **Lower Coverage Areas**:
+   - **Program.cs**: 0% coverage (startup and configuration code)
+   - Some infrastructure components have minor gaps in branch coverage
+
+4. **Test Quality Focus**: We prioritize meaningful tests that verify behavior rather than achieving arbitrary coverage numbers.
+
+For our test suite, we use:
+- **xUnit**: For unit and integration testing
+- **Coverlet**: For collecting code coverage data
+- **ReportGenerator**: For generating detailed HTML coverage reports
+
+Tests can be run with code coverage using:
+```bash
+# Generate coverage data
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
+
+# Convert to HTML report
+reportgenerator -reports:"**/*.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:Html
+```
+
 ## Tech Stack
 
 - ASP.NET Core 9.0

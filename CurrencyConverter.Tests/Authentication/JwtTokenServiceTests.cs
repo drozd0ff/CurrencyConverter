@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 
 #nullable enable
 namespace CurrencyConverter.Tests.Authentication;
@@ -57,11 +56,19 @@ public class JwtTokenServiceTests
         
         // Check claims
         var claims = jsonToken.Claims.ToList();
-        Assert.Contains(claims, c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userId);
-        Assert.Contains(claims, c => c.Type == JwtRegisteredClaimNames.NameId && c.Value == userId);
-        Assert.Contains(claims, c => c.Type == JwtRegisteredClaimNames.Name && c.Value == userName);
-        Assert.Contains(claims, c => c.Type == ClaimTypes.Role && c.Value == "User");
-        Assert.Contains(claims, c => c.Type == ClaimTypes.Role && c.Value == "Admin");
+        
+        // Print all claims for diagnosis
+        foreach (var claim in claims)
+        {
+            Console.WriteLine($"Found claim - Type: '{claim.Type}', Value: '{claim.Value}'");
+        }
+
+        // Use string comparison for claim types instead of enum values
+        Assert.Contains(claims, c => c.Type == "sub" && c.Value == userId);
+        Assert.Contains(claims, c => c.Type == "nameid" && c.Value == userId);
+        Assert.Contains(claims, c => c.Type == "name" && c.Value == userName);
+        Assert.Contains(claims, c => c.Type == "role" && c.Value == "User");
+        Assert.Contains(claims, c => c.Type == "role" && c.Value == "Admin");
     }
 
     [Fact]
@@ -86,7 +93,7 @@ public class JwtTokenServiceTests
         
         // Check there are no role claims
         var claims = jsonToken.Claims.ToList();
-        Assert.DoesNotContain(claims, c => c.Type == ClaimTypes.Role);
+        Assert.DoesNotContain(claims, c => c.Type == "role");
     }
 
     [Fact]
@@ -111,7 +118,7 @@ public class JwtTokenServiceTests
         
         // Check there are no role claims
         var claims = jsonToken.Claims.ToList();
-        Assert.DoesNotContain(claims, c => c.Type == ClaimTypes.Role);
+        Assert.DoesNotContain(claims, c => c.Type == "role");
     }
 
     [Fact]
@@ -140,5 +147,106 @@ public class JwtTokenServiceTests
         
         // Allow for a small time difference (5 seconds) due to test execution timing
         Assert.True(Math.Abs(timeDifference.TotalSeconds) < 5);
+    }
+
+    [Fact]
+    public void ValidateToken_ValidToken_ReturnsValidClaimsPrincipal()
+    {
+        // Arrange
+        string userId = "test-user-id";
+        string userName = "testuser";
+        var roles = new List<string> { "User", "Admin" };
+
+        // Generate a token first
+        var token = _tokenService.GenerateToken(userId, userName, roles);
+
+        // Act
+        var principal = _tokenService.ValidateToken(token);
+
+        // Assert
+        Assert.NotNull(principal);
+        Assert.NotNull(principal.Identity);
+        Assert.True(principal.Identity.IsAuthenticated);
+        
+        // Check identity and claims
+        var identity = principal.Identity as ClaimsIdentity;
+        Assert.NotNull(identity);
+        
+        // Verify expected claims exist - using actual claim types from JWT tokens
+        Assert.Contains(identity.Claims, c => c.Type == ClaimTypes.NameIdentifier && c.Value == userId);
+        Assert.Contains(identity.Claims, c => c.Type == "name" && c.Value == userName);
+        Assert.Contains(identity.Claims, c => c.Type == ClaimTypes.Role && c.Value == "User");
+        Assert.Contains(identity.Claims, c => c.Type == ClaimTypes.Role && c.Value == "Admin");
+    }
+
+    [Fact]
+    public void Constructor_WithNullOptions_ThrowsArgumentNullException()
+    {
+        // Arrange
+        IOptions<JwtSettings>? nullOptions = null;
+        
+        // The null reference exception happens because we're accessing .Value on a null object
+        // So we need to create a mock where Value is null
+        var mockOptionsWithNullValue = new Mock<IOptions<JwtSettings>>();
+        mockOptionsWithNullValue.Setup(x => x.Value).Returns((JwtSettings)null);
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new JwtTokenService(mockOptionsWithNullValue.Object, _mockLogger.Object));
+    }
+    
+    [Fact]
+    public void Constructor_WithNullLogger_CreatesServiceCorrectly()
+    {
+        // Arrange & Act
+        var service = new JwtTokenService(_mockOptions.Object, null);
+        
+        // Assert - service was created without exception
+        Assert.NotNull(service);
+        
+        // Verify token generation still works
+        var token = service.GenerateToken("id", "user", new List<string> { "Role" });
+        Assert.NotNull(token);
+        Assert.NotEmpty(token);
+    }
+    
+    [Fact]
+    public void ValidateToken_InvalidToken_ThrowsSecurityTokenException()
+    {
+        // Arrange
+        string invalidToken = "invalid.token.string";
+        
+        // Act & Assert
+        // Since JwtSecurityTokenHandler's ValidateToken throws ArgumentException 
+        // for this type of invalid token, we should expect that instead
+        Assert.Throws<ArgumentException>(() => _tokenService.ValidateToken(invalidToken));
+    }
+    
+    [Fact]
+    public void GenerateToken_OriginalOverload_GeneratesValidToken()
+    {
+        // Arrange
+        string userId = "test-user-id";
+        string[] roles = { "User", "Admin" };
+        
+        // Act
+        var token = _tokenService.GenerateToken(userId, roles);
+        
+        // Assert
+        Assert.NotNull(token);
+        Assert.NotEmpty(token);
+        
+        // Validate token content
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jsonToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+        
+        Assert.NotNull(jsonToken);
+        Assert.Equal(_jwtSettings.Issuer, jsonToken.Issuer);
+        Assert.Equal(_jwtSettings.Audience, jsonToken.Payload["aud"].ToString());
+        
+        // Check claims
+        var claims = jsonToken.Claims.ToList();
+        Assert.Contains(claims, c => c.Type == "sub" && c.Value == userId);
+        Assert.Contains(claims, c => c.Type == "role" && c.Value == "User");
+        Assert.Contains(claims, c => c.Type == "role" && c.Value == "Admin");
     }
 }

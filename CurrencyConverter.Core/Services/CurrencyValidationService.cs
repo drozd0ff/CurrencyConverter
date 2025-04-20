@@ -9,9 +9,17 @@ namespace CurrencyConverter.Core.Services
             "TRY", "PLN", "THB", "MXN"
         };
 
+        private readonly HashSet<string> _validCurrencyCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "HKD", "NZD", 
+            "SEK", "KRW", "SGD", "NOK", "MXN", "INR", "RUB", "ZAR", "TRY", "BRL", 
+            "TWD", "DKK", "PLN", "THB", "IDR", "HUF", "CZK", "ILS", "CLP", "PHP", 
+            "AED", "COP", "SAR", "MYR", "RON"
+        };
+
         public bool IsValidCurrency(string? currency)
         {
-            return !string.IsNullOrWhiteSpace(currency);
+            return !string.IsNullOrWhiteSpace(currency) && _validCurrencyCodes.Contains(currency);
         }
 
         public bool IsRestrictedCurrency(string? currency)
@@ -21,7 +29,7 @@ namespace CurrencyConverter.Core.Services
 
         public bool AreValidCurrencies(params string[]? currencies)
         {
-            return currencies != null && currencies.All(c => !string.IsNullOrWhiteSpace(c));
+            return currencies != null && currencies.All(c => IsValidCurrency(c));
         }
     }
 }
